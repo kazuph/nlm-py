@@ -19,7 +19,6 @@ dependencies = [
     "python-dotenv",
     "webdriver-manager",
     "colorama",
-    "pycookiecheat",
     "beautifulsoup4",
 ]
 
@@ -28,3 +27,8 @@ nlm = "nlm.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["nlm"]
+include = ["nlm/bin/*"]
+
+[tool.hatch.build]
+artifacts = ["nlm/bin/*"]
+
