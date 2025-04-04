@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "nlm-py"
+version = "0.1.0"
+description = "Command-line interface for Google's NotebookLM"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    {name = "kazuph", email = "example@example.com"},
+]
+dependencies = [
+    "click",
+    "requests",
+    "pydantic",
+    "selenium",
+    "python-dotenv",
+    "webdriver-manager",
+    "colorama",
+    "pycookiecheat",
+    "beautifulsoup4",
+]
+
+[project.scripts]
+nlm = "nlm.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["nlm"]
