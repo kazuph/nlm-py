@@ -131,9 +131,10 @@ def _get_auth_with_selenium(profile_name: str = "Default", debug: bool = False) 
         options.add_argument('--password-store=basic')
         # options.add_argument('--no-sandbox') # 以前追加したが、一旦コメントアウトして様子見
 
-        if not debug:
-            # options.add_argument('--headless') # 古いヘッドレスモード
-            options.add_argument('--headless=new') # 新しいヘッドレスモードを試す
+        # デバッグのため、常に非ヘッドレスで起動するように一時的に変更
+        # if not debug:
+        #     # options.add_argument('--headless') # 古いヘッドレスモード
+        #     options.add_argument('--headless=new') # 新しいヘッドレスモードを試す
 
         # User Agent を通常のChromeに偽装 (ヘッドレス検出対策)
         user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36" # 例: 実際のバージョンに合わせるとより良い
@@ -147,7 +148,8 @@ def _get_auth_with_selenium(profile_name: str = "Default", debug: bool = False) 
         try:
             # undetected_chromedriver を使用して WebDriver を起動
             # version_main を指定して、現在のChromeバージョン(ログから134と判明)に合わせる
-            driver = uc.Chrome(options=options, version_main=134, use_subprocess=True) # use_subprocess=True を追加
+            # use_subprocess=True を一旦削除して様子を見る
+            driver = uc.Chrome(options=options, version_main=134)
 
             if debug:
                 print("Navigating to NotebookLM...")
@@ -221,8 +223,9 @@ def get_auth(profile_name: str = "Default", debug: bool = False) -> Tuple[str, s
         print("Falling back to loading stored credentials...", file=sys.stderr)
         return load_stored_env() or ("", "")
     except (FileNotFoundError, TimeoutError, ValueError, IOError, WebDriverException, Exception) as e:
-        if debug:
-            print(f"Error during Selenium/uc authentication: {e}", file=sys.stderr)
+        # デバッグモードでなくてもエラーの種類とメッセージは表示する
+        print(f"Error during Selenium/uc authentication ({type(e).__name__}): {e}", file=sys.stderr)
+        # if debug: # この if は不要だった
         print("Selenium/uc authentication failed. Falling back to loading stored credentials...", file=sys.stderr)
         return load_stored_env() or ("", "")
 
