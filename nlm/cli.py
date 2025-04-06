@@ -33,7 +33,12 @@ class NotebookLMCLI:
             if not self.auth_token or not self.cookies:
                 print("Authentication required. Run 'nlm auth' first.")
                 sys.exit(1)
-                
+                if self.debug:
+                    print(f"DEBUG: Initializing Client with:")
+                    print(f"  Auth Token (len={len(self.auth_token)}): '{self.auth_token[:20]}...'") # Display first 20 chars
+                    print(f"  Cookies (len={len(self.cookies)}): '{self.cookies[:50]}...'") # Display first 50 chars
+                    
+                self.client = Client(self.auth_token, self.cookies, self.debug)
             self.client = Client(self.auth_token, self.cookies, self.debug)
             
     def run_command(self, cmd: str, args: List[str]):
