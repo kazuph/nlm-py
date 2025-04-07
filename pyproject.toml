@@ -16,6 +16,7 @@ dependencies = [
     "requests",
     "pydantic",
     "selenium",
+    "undetected-chromedriver", # Add undetected-chromedriver
     "python-dotenv",
     "webdriver-manager",
     "colorama",

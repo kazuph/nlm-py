@@ -155,7 +155,7 @@ def _get_auth_with_selenium(profile_name: str = "Default", debug: bool = False) 
                 print("Navigating to target service...")
 
             # --- Extract authentication information ---
-            driver.get("https://[YOUR_SERVICE_URL_HERE]") # TODO: Replace with the actual service URL
+            driver.get("https://notebooklm.google.com/") # Use the correct service URL
 
             if debug:
                 print("Waiting for authentication data (WIZ_global_data)...")
