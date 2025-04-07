@@ -24,25 +24,25 @@ uv run nlm auth
 uv run nlm --help
 ```
 
-### Option 2: Global Installation (using uv + pipx)
+### Option 2: Global Installation (using uv)
 
-This makes the `nlm` command available system-wide.
+This makes the `nlm` command available system-wide using uv's tool management.
 
 ```bash
 # 1. Clone the repository (if you haven't already)
 git clone https://github.com/kazuph/nlm-py.git
 cd nlm-py
 
-# 2. Build the wheel file
-uv build
+# 2. Install the tool using uv
+#    This command installs the package from the current directory (.)
+#    into an isolated environment managed by uv.
+uv tool install .
 
-# 3. Install pipx (if you don't have it yet)
-pip install pipx
-pipx ensurepath
-
-# 4. Install the built wheel using pipx
-#    (Replace the version number if it differs)
-pipx install dist/nlm_py-0.1.0-py3-none-any.whl --force
+# 3. Ensure uv's bin directory is in your PATH
+#    uv usually prompts you to do this during installation,
+#    but you can run this command manually if needed.
+#    Follow the instructions provided by the command.
+uv tool bin
 
 # Now you can run nlm commands directly
 nlm --help
