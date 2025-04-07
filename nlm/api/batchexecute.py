@@ -98,6 +98,7 @@ class Client:
 
     def build_rpc_data(self, rpc: RPC) -> List[Any]:
         """Convert RPC to batchexecute format."""
+        # Always JSON encode the arguments list for the f.req payload
         args_json = json.dumps(rpc.args)
         return [rpc.id, args_json, None, "generic"]
 

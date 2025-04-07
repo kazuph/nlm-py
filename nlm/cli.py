@@ -152,6 +152,13 @@ class NotebookLMCLI:
                     print("Usage: nlm generate-section <notebook-id>")
                     sys.exit(1)
                 self.generate_section(args[0])
+
+            # Chat operation
+            elif cmd == "chat":
+                if len(args) != 2:
+                    print("Usage: nlm chat <notebook-id> \"<question>\"")
+                    sys.exit(1)
+                self.chat(args[0], args[1])
                 
             # Other operations
             elif cmd == "hb":  # Heartbeat
@@ -196,6 +203,9 @@ class NotebookLMCLI:
         print("  generate-guide <id>  Generate notebook guide")
         print("  generate-outline <id>  Generate content outline")
         print("  generate-section <id>  Generate new section\n")
+
+        print("Chat Commands:")
+        print("  chat <id> \"<question>\"  Ask a question based on notebook sources\n")
         
         print("Other Commands:")
         print("  auth              Setup authentication")
@@ -432,6 +442,44 @@ class NotebookLMCLI:
         
         section = self.client.generate_section(project_id)
         print(f"Section:\n{section.content}")
+
+    # Chat operation
+    def chat(self, notebook_id: str, question: str):
+        """Ask a question using the notebook's context."""
+        print(f"Asking question in notebook {notebook_id}...")
+        print(f"Question: {question}")
+
+        # Get all source IDs for the notebook
+        source_ids = []
+        try:
+            print("Fetching sources...")
+            project = self.client.get_project(notebook_id) # Use the existing get_project method
+            source_ids = [src.source_id.source_id for src in project.sources if src.source_id]
+            if not source_ids:
+                print("Warning: No sources found in the notebook. Asking without source context.")
+            elif self.debug:
+                 print(f"Using sources: {source_ids}")
+
+        except Exception as e:
+            print(f"Error fetching sources for notebook {notebook_id}: {e}")
+            print("Proceeding to ask question without specific source context.")
+            # source_ids remains empty
+
+        # Call the ask_question method (history is None for now)
+        try:
+            answer = self.client.ask_question(notebook_id, question, source_ids, None)
+            print("\nAnswer:")
+            # Ensure answer is printed correctly, even if it contains newlines
+            print(answer)
+        except Exception as e:
+            print(f"\nError getting answer: {e}")
+            # Optionally print more debug info if available
+            if self.debug and hasattr(e, 'response') and hasattr(e.response, 'status_code') and hasattr(e.response, 'text'):
+                 print(f"Response status: {e.response.status_code}")
+                 print(f"Response body: {e.response.text}")
+            elif self.debug:
+                 import traceback
+                 traceback.print_exc() # Print full traceback in debug mode
 
 
 @click.command(add_help_option=False, context_settings=dict(ignore_unknown_options=True))

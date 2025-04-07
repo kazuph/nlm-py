@@ -809,3 +809,108 @@ class Client:
             
         content = resp[0] if isinstance(resp[0], str) else ""
         return GenerateSectionResponse(content=content)
+
+    def ask_question(self, project_id: str, question: str, source_ids: Optional[List[str]] = None, history: Optional[List[Tuple[str, str]]] = None) -> str:
+        """Ask a question using the notebook's context."""
+        from .rpc import RPC_ACT_ON_SOURCES
+        import json # Make sure json is imported if not already at the top
+
+        if not project_id:
+            raise ValueError("Project ID is required.")
+        if not question:
+            raise ValueError("Question is required.")
+
+        # 1. Build the source ID list structure: [[["id1"]], [["id2"]], ...]
+        source_list_structure = []
+        if source_ids:
+            for sid in source_ids:
+                source_list_structure.append([[sid]])
+        # If no source IDs provided, pass an empty list.
+        # The API might require at least one source, needs testing.
+
+        # 2. History is not included in the latest request example structure for f.req's args.
+        #    The history seems to be handled differently, perhaps via cookies or other params.
+        #    We will omit history from the complex_args for now based on the latest example.
+
+        # 3. Build the main arguments list for RPC_ACT_ON_SOURCES based on the latest example:
+        # Structure: [source_list, unknown_list, [question]]
+        unknown_list_observed = [None, None, None, None, None, None, 2, None, None, 2] # From user example
+        complex_args = [
+            source_list_structure,
+            unknown_list_observed,
+            [question] # Third element is a list containing only the question string
+        ]
+
+        if self.debug:
+            # Use json.dumps for potentially large/complex args
+            debug_args_str = "..." # Placeholder if too long
+            try:
+                debug_args_str = json.dumps(complex_args, indent=2, ensure_ascii=False)
+                if len(debug_args_str) > 1000: # Limit debug output length
+                    debug_args_str = debug_args_str[:1000] + "..."
+            except Exception:
+                pass # Ignore errors during debug string generation
+
+            print("\n=== Ask Question ===")
+            print(f"Project ID: {project_id}")
+            print(f"Question: {question}")
+            print(f"Source IDs: {source_ids}")
+            print(f"Complex Args Payload (preview): {debug_args_str}")
+
+        # 4. Call the RPC
+        # Note: rpc.do now returns the parsed JSON data directly if possible (from rpc.py change)
+        # However, the ask_question response data itself is a JSON *string* that needs further parsing.
+        resp_data_str = self.rpc.do(Call(
+            id=RPC_ACT_ON_SOURCES,
+            args=complex_args, # Pass the complex list directly
+            notebook_id=project_id
+        ))
+
+        if self.debug:
+             print(f"\nRaw Response Data String from rpc.do: {str(resp_data_str)[:500]}...") # Print beginning of response
+
+        # 5. Parse the response string (which contains JSON)
+        if not resp_data_str or not isinstance(resp_data_str, str):
+             # If rpc.do already parsed it somehow (unexpected for this endpoint), handle it.
+             # Or raise error if format is wrong.
+             if isinstance(resp_data_str, list): # Check if it might be already parsed
+                 parsed_response = resp_data_str
+                 if self.debug: print("Response seems pre-parsed by rpc.do")
+             else:
+                 raise ValueError(f"Expected string response containing JSON, got {type(resp_data_str)}")
+        else:
+            # Standard case: parse the JSON string returned for ActOnSources
+            try:
+                parsed_response = json.loads(resp_data_str)
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Failed to parse inner JSON response string: {e}\nResponse string was: {resp_data_str}")
+
+        # Extract the answer text from the parsed structure
+        try:
+            if self.debug:
+                debug_parsed_str = "..."
+                try:
+                    debug_parsed_str = json.dumps(parsed_response, indent=2, ensure_ascii=False)
+                    if len(debug_parsed_str) > 1000:
+                        debug_parsed_str = debug_parsed_str[:1000] + "..."
+                except Exception:
+                    pass
+                print(f"\nParsed Inner Response (preview): {debug_parsed_str}")
+
+            # Structure: [ [ "Answer text", metadata... ], [ other_suggestions? ] ]
+            if (isinstance(parsed_response, list) and
+                    len(parsed_response) > 0 and
+                    isinstance(parsed_response[0], list) and
+                    len(parsed_response[0]) > 0 and
+                    isinstance(parsed_response[0][0], str)):
+                answer_text = parsed_response[0][0]
+                # TODO: Optionally extract citations parsed_response[0][2] if needed
+                return answer_text
+            else:
+                # Log the structure if it's not as expected
+                if self.debug: print(f"Unexpected parsed response structure: {parsed_response}")
+                raise ValueError("Could not extract answer text from parsed response structure.")
+
+        except Exception as e:
+            # Catch other potential errors during parsing/extraction
+             raise ValueError(f"Error processing parsed response: {e}")
