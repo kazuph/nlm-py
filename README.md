@@ -5,7 +5,7 @@ Command-line interface for Google's NotebookLM, written in Python.
 ## 特徴
 
 - Google NotebookLMへのアクセスと管理機能
-- Goで書かれた`chromedp`を使用して既存のChromeセッションから認証情報を取得
+- 既存のChromeセッションから認証情報を取得 (Python実装)
 - クロスプラットフォーム対応（macOS, Linux, Windows）
 
 ## インストール
@@ -100,7 +100,6 @@ nlm --help
 ### 前提条件
 
 - Python 3.8以上
-- Go 1.18以上（Goバイナリのビルドに必要）
 
 ### セットアップ
 
@@ -112,9 +111,6 @@ cd nlm-py
 # 依存関係のインストール
 pip install -e .
 
-# Goバイナリのビルド
-cd go
-./build.sh
 ```
 
 ## アーキテクチャ
@@ -122,7 +118,7 @@ cd go
 このツールは以下のコンポーネントで構成されています：
 
 1. **Python CLI** - コマンドラインインターフェースとNotebookLM APIクライアント
-2. **Go Auth Module** - `chromedp`を使用したブラウザからの認証情報取得
+2. **Python Auth Module** - ブラウザからの認証情報取得
 
 ## ライセンス
 
