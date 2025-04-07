@@ -1,4 +1,4 @@
-import asyncio # 削除予定だが、他の部分で使われている可能性を考慮し一旦残す
+import asyncio # To be removed, but kept for now considering potential use elsewhere
 import json
 import logging
 import os
@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from typing import Tuple, Optional, Dict, List
 
-# Selenium と undetected-chromedriver のインポート
+# Import Selenium and undetected-chromedriver
 try:
     from selenium import webdriver
     from selenium.webdriver.chrome.options import Options as ChromeOptions
@@ -22,13 +22,13 @@ try:
 except ImportError:
     print("Error: selenium or undetected-chromedriver is not installed.", file=sys.stderr)
     print("Please install them using: uv pip install selenium undetected-chromedriver", file=sys.stderr)
-    webdriver = None # 後続のチェック用
+    webdriver = None # For subsequent checks
     uc = None
 
-# --- ヘルパー関数 (プロファイルパス取得は流用) ---
+# --- Helper Functions (Reusing profile path retrieval) ---
 
 def _get_chrome_profile_path() -> Optional[Path]:
-    """OS に応じた Chrome のデフォルトユーザーデータディレクトリパスを取得"""
+    """Get the default Chrome user data directory path based on the OS"""
     system = platform.system().lower()
     if system == "darwin":
         return Path.home() / "Library/Application Support/Google/Chrome"
@@ -49,18 +49,18 @@ def _get_chrome_profile_path() -> Optional[Path]:
     else:
         return None
 
-# Selenium の get_cookies() の結果に合わせてフォーマット
+# Format according to the result of Selenium's get_cookies()
 def _format_selenium_cookies(cookies: List[Dict]) -> str:
-    """Selenium の Cookie リストを HTTP ヘッダー形式の文字列に整形"""
+    """Format a list of Selenium cookies into an HTTP header string"""
     if not cookies:
         return ""
-    # Selenium は 'name' と 'value' キーを持つ辞書のリストを返す
+    # Selenium returns a list of dictionaries with 'name' and 'value' keys
     return "; ".join([f"{cookie['name']}={cookie['value']}" for cookie in cookies])
 
-# --- Selenium を使った認証処理 ---
+# --- Authentication process using Selenium ---
 
 def _get_auth_with_selenium(profile_name: str = "Default", debug: bool = False) -> Tuple[str, str]:
-    """Selenium と undetected-chromedriver を使用して NotebookLM から認証情報を取得"""
+    """Get authentication information from the target service using Selenium and undetected-chromedriver"""
     if not webdriver or not uc:
         raise ImportError("selenium or undetected-chromedriver is not installed or could not be imported.")
 
@@ -75,16 +75,16 @@ def _get_auth_with_selenium(profile_name: str = "Default", debug: bool = False) 
     if debug:
         print(f"Using source profile directory: {source_profile_dir}")
 
-    driver = None # finally で参照するため
+    driver = None # To be referenced in finally block
     with tempfile.TemporaryDirectory() as temp_dir_str:
         temp_dir = Path(temp_dir_str)
-        target_profile_dir = temp_dir / "Default" # プロファイル名はDefault固定で良いか？
+        target_profile_dir = temp_dir / "Default" # Is it okay to fix the profile name to Default?
         target_profile_dir.mkdir(parents=True, exist_ok=True)
 
         if debug:
             print(f"Using temporary directory: {temp_dir}")
 
-        # --- プロファイルデータのコピー (Pyppeteer版と同じロジック) ---
+        # --- Copy profile data (Same logic as Pyppeteer version) ---
         files_to_copy = ["Cookies", "Login Data", "Web Data"]
         for filename in files_to_copy:
             src = source_profile_dir / filename
@@ -108,14 +108,14 @@ def _get_auth_with_selenium(profile_name: str = "Default", debug: bool = False) 
         except Exception as e:
             raise IOError(f"Failed to write Local State file: {e}")
 
-        # --- undetected-chromedriver 起動 ---
+        # --- Launch undetected-chromedriver ---
         options = uc.ChromeOptions()
 
-        # Go実装/Pyppeteer版で設定したフラグを追加
-        options.add_argument(f'--user-data-dir={str(temp_dir)}') # UserDataDir指定
+        # Add flags set in Go implementation/Pyppeteer version
+        options.add_argument(f'--user-data-dir={str(temp_dir)}') # Specify UserDataDir
         options.add_argument('--no-first-run')
         options.add_argument('--no-default-browser-check')
-        options.add_argument('--disable-gpu') # ヘッドレスで推奨されることがある
+        options.add_argument('--disable-gpu') # Sometimes recommended for headless
         options.add_argument('--disable-extensions')
         options.add_argument('--disable-sync')
         options.add_argument('--disable-popup-blocking')
@@ -127,41 +127,41 @@ def _get_auth_with_selenium(profile_name: str = "Default", debug: bool = False) 
         options.add_argument('--force-color-profile=srgb')
         options.add_argument('--metrics-recording-only')
         options.add_argument('--safebrowsing-disable-auto-update')
-        options.add_argument('--enable-automation') # undetected-chromedriverでは不要/有害な場合もあるが一旦追加
+        options.add_argument('--enable-automation') # May be unnecessary/harmful with undetected-chromedriver, but added for now
         options.add_argument('--password-store=basic')
-        # options.add_argument('--no-sandbox') # 以前追加したが、一旦コメントアウトして様子見
+        # options.add_argument('--no-sandbox') # Added previously, but commented out for now to observe
 
-        # デバッグのため、常に非ヘッドレスで起動するように一時的に変更
+        # Temporarily changed to always launch in non-headless mode for debugging
         # if not debug:
-        #     # options.add_argument('--headless') # 古いヘッドレスモード
-        #     options.add_argument('--headless=new') # 新しいヘッドレスモードを試す
+        #     # options.add_argument('--headless') # Old headless mode
+        #     options.add_argument('--headless=new') # Try the new headless mode
 
-        # User Agent を通常のChromeに偽装 (ヘッドレス検出対策)
-        user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36" # 例: 実際のバージョンに合わせるとより良い
+        # Spoof User Agent to normal Chrome (Headless detection countermeasure)
+        user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36" # Example: Better to match the actual version
         options.add_argument(f'user-agent={user_agent}')
 
 
         if debug:
             print(f"Launching undetected-chromedriver with options...")
-            # オプション内容が多すぎるので表示は省略
+            # Skipping display as there are too many options
 
         try:
-            # undetected_chromedriver を使用して WebDriver を起動
-            # version_main を指定して、現在のChromeバージョン(ログから134と判明)に合わせる
-            # use_subprocess=True を一旦削除して様子を見る
+            # Launch WebDriver using undetected_chromedriver
+            # Specify version_main to match the current Chrome version (found to be 134 from logs)
+            # Temporarily remove use_subprocess=True to observe
             driver = uc.Chrome(options=options, version_main=134)
 
             if debug:
-                print("Navigating to NotebookLM...")
+                print("Navigating to target service...")
 
-            # --- 認証情報の抽出 ---
-            driver.get("https://notebooklm.google.com")
+            # --- Extract authentication information ---
+            driver.get("https://[YOUR_SERVICE_URL_HERE]") # TODO: Replace with the actual service URL
 
             if debug:
                 print("Waiting for authentication data (WIZ_global_data)...")
 
-            # WIZ_global_data が利用可能になるまで待機 (最大30秒)
-            # WebDriverWait を使う方法
+            # Wait until WIZ_global_data is available (max 30 seconds)
+            # Using WebDriverWait
             try:
                 WebDriverWait(driver, 30).until(
                     lambda d: d.execute_script("return !!window.WIZ_global_data")
@@ -173,22 +173,22 @@ def _get_auth_with_selenium(profile_name: str = "Default", debug: bool = False) 
             if debug:
                 print("Authentication data found. Extracting token and cookies...")
 
-            # トークンを取得
+            # Get the token
             token = driver.execute_script("return window.WIZ_global_data.SNlM0e")
 
-            # Cookie を取得
-            cookies_list = driver.get_cookies() # 現在のドメインとサブドメインのCookieを取得
+            # Get cookies
+            cookies_list = driver.get_cookies() # Get cookies for the current domain and subdomains
             cookies_str = _format_selenium_cookies(cookies_list)
 
             if debug:
                 print(f"Token extracted (length: {len(token) if token else 0})")
                 print(f"Cookies extracted (length: {len(cookies_str)})")
-                # デバッグ用に取得したCookieを表示
+                # Display retrieved cookies for debugging
                 # print(f"Retrieved cookies: {cookies_list}")
 
             if not token or not cookies_str:
-                 # Cookieが空でもトークンがあればOKとするか？ Go実装に合わせる
-                 # Go実装では両方チェックしているので、ここでも両方チェック
+                 # Should it be okay if cookies are empty but token exists? Align with Go implementation.
+                 # Go implementation checks both, so check both here as well.
                  raise ValueError("Failed to extract valid token or cookies.")
 
             return token, cookies_str
@@ -203,9 +203,9 @@ def _get_auth_with_selenium(profile_name: str = "Default", debug: bool = False) 
                 driver.quit()
                 if debug:
                     print("Browser closed.")
-            # 一時ディレクトリは with ブロックを抜ける際に自動削除される
+            # Temporary directory is automatically deleted when exiting the with block
 
-# --- 同期ラッパー関数 (Pyppeteer版から修正) ---
+# --- Synchronous wrapper function (Modified from Pyppeteer version) ---
 
 def get_auth(profile_name: str = "Default", debug: bool = False) -> Tuple[str, str]:
     """
@@ -215,7 +215,7 @@ def get_auth(profile_name: str = "Default", debug: bool = False) -> Tuple[str, s
         print(f"Starting authentication process for profile: {profile_name} using Selenium/uc")
 
     try:
-        # Selenium版の関数を直接呼び出す
+        # Call the Selenium version function directly
         auth_token, cookies = _get_auth_with_selenium(profile_name, debug)
         return auth_token, cookies
     except ImportError as e:
@@ -223,15 +223,15 @@ def get_auth(profile_name: str = "Default", debug: bool = False) -> Tuple[str, s
         print("Falling back to loading stored credentials...", file=sys.stderr)
         return load_stored_env() or ("", "")
     except (FileNotFoundError, TimeoutError, ValueError, IOError, WebDriverException, Exception) as e:
-        # デバッグモードでなくてもエラーの種類とメッセージは表示する
+        # Display error type and message even if not in debug mode
         print(f"Error during Selenium/uc authentication ({type(e).__name__}): {e}", file=sys.stderr)
-        # if debug: # この if は不要だった
+        # if debug: # This if was unnecessary
         print("Selenium/uc authentication failed. Falling back to loading stored credentials...", file=sys.stderr)
         return load_stored_env() or ("", "")
 
 
-# --- 既存のヘルパー関数 (load_stored_env, detect_auth_info, save_auth_to_env, handle_auth は流用可能) ---
-# (handle_auth 内の Pyppeteer 関連のメッセージは修正が必要)
+# --- Existing helper functions (load_stored_env, detect_auth_info, save_auth_to_env, handle_auth can be reused) ---
+# (Messages related to Pyppeteer within handle_auth need modification)
 
 def load_stored_env() -> Optional[Tuple[str, str]]:
     """Load stored authentication information from ~/.nlm/env."""
@@ -359,13 +359,13 @@ def handle_auth(args=None, debug=False) -> Tuple[Optional[str], Optional[str], O
     if args and len(args) > 0:
         profile_name = args[0]
 
-    # メッセージを修正
+    # Modify message
     print(f"nlm: Attempting to extract authentication from Chrome profile: '{profile_name}' using Selenium/uc...", file=sys.stderr)
     print(f"nlm: This requires you to be logged into Google in that Chrome profile.", file=sys.stderr)
     print(f"nlm: (To use a different profile, set NLM_BROWSER_PROFILE or pass it as an argument)", file=sys.stderr)
 
     try:
-        # get_auth は内部で _get_auth_with_selenium を呼ぶようになった
+        # get_auth now calls _get_auth_with_selenium internally
         auth_token, cookies = get_auth(profile_name, debug)
 
         if auth_token and cookies:

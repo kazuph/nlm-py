@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Optional, Union
 from .batchexecute import Client as BatchExecuteClient, Config, RPC, Response
 
 
-# RPC endpoint IDs for NotebookLM services
-# NotebookLM service - Project/Notebook operations
+# RPC endpoint IDs for services
+# Service - Project/Notebook operations
 RPC_LIST_RECENTLY_VIEWED_PROJECTS = "wXbhsf"  # ListRecentlyViewedProjects
 RPC_CREATE_PROJECT = "CCqFvf"  # CreateProject
 RPC_GET_PROJECT = "rLM1Ne"  # GetProject
@@ -14,7 +14,7 @@ RPC_DELETE_PROJECTS = "WWINqb"  # DeleteProjects
 RPC_MUTATE_PROJECT = "s0tc2d"  # MutateProject
 RPC_REMOVE_RECENTLY_VIEWED = "fejl7e"  # RemoveRecentlyViewedProject
 
-# NotebookLM service - Source operations
+# Service - Source operations
 RPC_ADD_SOURCES = "izAoDd"  # AddSources
 RPC_DELETE_SOURCES = "tGMBJ"  # DeleteSources
 RPC_MUTATE_SOURCE = "b7Wfje"  # MutateSource
@@ -23,19 +23,19 @@ RPC_LOAD_SOURCE = "hizoJc"  # LoadSource
 RPC_CHECK_SOURCE_FRESHNESS = "yR9Yof"  # CheckSourceFreshness
 RPC_ACT_ON_SOURCES = "yyryJe"  # ActOnSources
 
-# NotebookLM service - Note operations
+# Service - Note operations
 RPC_CREATE_NOTE = "CYK0Xb"  # CreateNote
 RPC_MUTATE_NOTE = "cYAfTb"  # MutateNote
 RPC_DELETE_NOTES = "AH0mwd"  # DeleteNotes
 RPC_GET_NOTES = "cFji9"  # GetNotes
 
-# NotebookLM service - Audio operations
+# Service - Audio operations
 RPC_CREATE_AUDIO_OVERVIEW = "AHyHrd"  # CreateAudioOverview
 RPC_GET_AUDIO_OVERVIEW = "VUsiyb"  # GetAudioOverview
 RPC_DELETE_AUDIO_OVERVIEW = "sJDbic"  # DeleteAudioOverview
 RPC_SHARE_AUDIO = "RGP97b"  # ShareAudio
 
-# NotebookLM service - Generation operations
+# Service - Generation operations
 RPC_GENERATE_DOCUMENT_GUIDES = "tr032e"  # GenerateDocumentGuides
 RPC_GENERATE_NOTEBOOK_GUIDE = "VfAZjd"  # GenerateNotebookGuide
 RPC_GENERATE_OUTLINE = "lCjAd"  # GenerateOutline
@@ -46,25 +46,25 @@ RPC_START_SECTION = "pGC7gf"  # StartSection
 
 @dataclass
 class Call:
-    """Represents a NotebookLM RPC call."""
+    """Represents an RPC call."""
     id: str  # RPC endpoint ID
     args: List[Any]  # Arguments for the call
     notebook_id: str = ""  # Optional notebook ID for context
 
 
 class Client:
-    """Client for NotebookLM RPC communication."""
+    """Client for RPC communication."""
     def __init__(self, auth_token: str, cookies: str, debug: bool = False):
         self.config = Config(
-            host="notebooklm.google.com",
+            host="[YOUR_HOST_HERE]", # TODO: Replace with the actual host
             app="LabsTailwindUi",
             auth_token=auth_token,
             cookies=cookies,
             debug=debug,
             headers={
                 "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
-                "origin": "https://notebooklm.google.com",
-                "referer": "https://notebooklm.google.com/",
+                "origin": "https://[YOUR_HOST_HERE]", # TODO: Replace with the actual host
+                "referer": "https://[YOUR_HOST_HERE]/", # TODO: Replace with the actual host
                 "x-same-domain": "1",
                 "accept": "*/*",
                 "accept-language": "en-US,en;q=0.9",
@@ -81,7 +81,7 @@ class Client:
         self.debug = debug
 
     def do(self, call: Call) -> json.loads:
-        """Execute a NotebookLM RPC call."""
+        """Execute an RPC call."""
         if self.debug:
             print("\n=== RPC Call ===")
             print(f"ID: {call.id}")

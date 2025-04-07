@@ -9,8 +9,8 @@ from .api.client import Client
 from .auth import handle_auth, load_stored_env
 
 
-class NotebookLMCLI:
-    """Main CLI for NotebookLM."""
+class ServiceCLI:
+    """Main CLI for the service."""
     def __init__(self):
         self.auth_token = os.environ.get("NLM_AUTH_TOKEN", "")
         self.cookies = os.environ.get("NLM_COOKIES", "")
@@ -42,7 +42,7 @@ class NotebookLMCLI:
             self.client = Client(self.auth_token, self.cookies, self.debug)
             
     def run_command(self, cmd: str, args: List[str]):
-        """Run a NotebookLM command."""
+        """Run a command."""
         self.load_env()
         
         # Handle auth command separately
@@ -488,8 +488,8 @@ class NotebookLMCLI:
 @click.option('--cookies', help='Cookies for authentication')
 @click.argument('args', nargs=-1)
 def cli(debug, auth, cookies, args):
-    """NotebookLM CLI."""
-    nlm = NotebookLMCLI()
+    """CLI for the service."""
+    nlm = ServiceCLI()
     
     # Set options
     if debug:

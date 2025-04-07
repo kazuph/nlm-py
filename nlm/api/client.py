@@ -13,7 +13,7 @@ from .models import *
 
 
 class Client:
-    """Client for NotebookLM API interactions."""
+    """Client for API interactions with the service."""
     def __init__(self, auth_token: str, cookies: str, debug: bool = False):
         self.rpc = RPCClient(auth_token, cookies, debug)
         self.debug = debug

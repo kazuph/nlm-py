@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "nlm-py"
 version = "0.1.0"
-description = "Command-line interface for Google's NotebookLM"
+description = "Command-line interface for a Google service"
 readme = "README.md"
 requires-python = ">=3.8"
 authors = [
