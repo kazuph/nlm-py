@@ -104,9 +104,18 @@ class Client:
 
     def execute(self, rpcs: List[RPC]) -> Response:
         """Execute a batch of RPC calls."""
-        # Construct URL
-        scheme = "http" if self.config.use_http else "https"
-        url = f"{scheme}://{self.config.host}/_/{self.config.app}/data/batchexecute"
+        # Construct URL robustly, handling potential scheme in host config
+        from urllib.parse import urlparse
+        parsed_host = urlparse(self.config.host)
+        scheme = parsed_host.scheme if parsed_host.scheme else ("http" if self.config.use_http else "https")
+        # Use netloc if available (includes port if specified), otherwise use path (for host-only strings)
+        netloc = parsed_host.netloc if parsed_host.netloc else parsed_host.path
+        # Ensure netloc doesn't have extra slashes that could break the join
+        netloc = netloc.strip('/')
+        # Define the API path separately
+        api_path = f"/_/{self.config.app}/data/batchexecute"
+        # Combine scheme, netloc, and path
+        url = f"{scheme}://{netloc}{api_path}"
 
         # Add query parameters
         params = dict(self.config.url_params)

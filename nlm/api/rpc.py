@@ -56,15 +56,15 @@ class Client:
     """Client for RPC communication."""
     def __init__(self, auth_token: str, cookies: str, debug: bool = False):
         self.config = Config(
-            host="[YOUR_HOST_HERE]", # TODO: Replace with the actual host
+            host="https://notebooklm.google.com",
             app="LabsTailwindUi",
             auth_token=auth_token,
             cookies=cookies,
             debug=debug,
             headers={
                 "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
-                "origin": "https://[YOUR_HOST_HERE]", # TODO: Replace with the actual host
-                "referer": "https://[YOUR_HOST_HERE]/", # TODO: Replace with the actual host
+                "origin": "https://notebooklm.google.com",
+                "referer": "https://notebooklm.google.com/",
                 "x-same-domain": "1",
                 "accept": "*/*",
                 "accept-language": "en-US,en;q=0.9",

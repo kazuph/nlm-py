@@ -870,20 +870,28 @@ class Client:
              print(f"\nRaw Response Data String from rpc.do: {str(resp_data_str)[:500]}...") # Print beginning of response
 
         # 5. Parse the response string (which contains JSON)
-        if not resp_data_str or not isinstance(resp_data_str, str):
-             # If rpc.do already parsed it somehow (unexpected for this endpoint), handle it.
-             # Or raise error if format is wrong.
-             if isinstance(resp_data_str, list): # Check if it might be already parsed
-                 parsed_response = resp_data_str
-                 if self.debug: print("Response seems pre-parsed by rpc.do")
-             else:
-                 raise ValueError(f"Expected string response containing JSON, got {type(resp_data_str)}")
-        else:
+        # 5. Parse the response string (which contains JSON) or handle None/pre-parsed data
+        parsed_response = None # Initialize parsed_response
+        if resp_data_str is None:
+            raise ValueError("Received None response from API call (rpc.do). Check API status or request details.")
+        elif isinstance(resp_data_str, list):
+            # Handle the case where rpc.do might have already parsed the response
+            parsed_response = resp_data_str
+            if self.debug: print("Response seems pre-parsed by rpc.do")
+        elif isinstance(resp_data_str, str):
             # Standard case: parse the JSON string returned for ActOnSources
             try:
                 parsed_response = json.loads(resp_data_str)
             except json.JSONDecodeError as e:
                 raise ValueError(f"Failed to parse inner JSON response string: {e}\nResponse string was: {resp_data_str}")
+        else:
+            # Catch any other unexpected type
+            raise ValueError(f"Expected string response containing JSON, list, or None, got {type(resp_data_str)}")
+
+        # Ensure parsed_response is set before proceeding (it should be unless an error was raised)
+        if parsed_response is None and isinstance(resp_data_str, str):
+             # This case should ideally not be reached if json.loads succeeded or failed with exception
+             raise ValueError("Internal error: parsed_response is None after string processing.")
 
         # Extract the answer text from the parsed structure
         try:
@@ -898,18 +906,24 @@ class Client:
                 print(f"\nParsed Inner Response (preview): {debug_parsed_str}")
 
             # Structure: [ [ "Answer text", metadata... ], [ other_suggestions? ] ]
+            # Check the new expected structure based on the error log
             if (isinstance(parsed_response, list) and
-                    len(parsed_response) > 0 and
-                    isinstance(parsed_response[0], list) and
-                    len(parsed_response[0]) > 0 and
-                    isinstance(parsed_response[0][0], str)):
-                answer_text = parsed_response[0][0]
-                # TODO: Optionally extract citations parsed_response[0][2] if needed
+                    len(parsed_response) >= 3 and # Expecting at least 3 elements
+                    parsed_response[2] is not None and # Check if the third element exists
+                    isinstance(parsed_response[2], list) and
+                    len(parsed_response[2]) >= 1 and
+                    isinstance(parsed_response[2][0], list) and
+                    len(parsed_response[2][0]) >= 1 and
+                    isinstance(parsed_response[2][0][0], str)):
+                # Extract the first answer suggestion
+                answer_text = parsed_response[2][0][0]
+                # TODO: Optionally handle multiple suggestions if needed (e.g., parsed_response[2][0][1:])
+                # TODO: Extract citations if they exist elsewhere in the structure (e.g., parsed_response[0]?)
                 return answer_text
             else:
                 # Log the structure if it's not as expected
-                if self.debug: print(f"Unexpected parsed response structure: {parsed_response}")
-                raise ValueError("Could not extract answer text from parsed response structure.")
+                if self.debug: print(f"Unexpected parsed response structure for answer extraction: {parsed_response}")
+                raise ValueError("Could not extract answer text from the observed parsed response structure.")
 
         except Exception as e:
             # Catch other potential errors during parsing/extraction
